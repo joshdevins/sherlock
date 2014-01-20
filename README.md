@@ -2,6 +2,8 @@
 
 Fingerprint indexing, searching, matching. You know, general sleuthing.
 
+[![Build Status](https://travis-ci.org/joshdevins/dsp.png)](https://travis-ci.org/joshdevins/sherlock)
+
 ## Objectives
 
 * understand, at a fundamental level, the index and searching algorithm from the
