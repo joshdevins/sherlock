@@ -2,7 +2,7 @@
 
 Fingerprint indexing, searching, matching. You know, general sleuthing.
 
-[![Build Status](https://travis-ci.org/joshdevins/dsp.png)](https://travis-ci.org/joshdevins/sherlock)
+[![Build Status](https://travis-ci.org/joshdevins/sherlock.png)](https://travis-ci.org/joshdevins/sherlock)
 
 ## Objectives
 
