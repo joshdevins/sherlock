@@ -10,7 +10,7 @@ type approximate_search_strategy func(sfp sub_fingerprint) []sub_fingerprint
 
 func noopApproximateSearchStrategy() approximate_search_strategy {
 	return func(sfp sub_fingerprint) []sub_fingerprint {
-		make([]sub_fingerprint, 0)
+		return make([]sub_fingerprint, 0)
 	}
 }
 
