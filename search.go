@@ -3,7 +3,11 @@ package main
 type candidate_fingerprint_block struct {
 	fp     *fingerprint
 	offset int
-	fpb    fingerprint_block
+}
+
+// TODO
+func deduplicateCandidateFingerprintBlocks(candidates []candidate_fingerprint_block) []candidate_fingerprint_block {
+	return candidates
 }
 
 type approximate_search_strategy func(sfp sub_fingerprint) []sub_fingerprint
@@ -25,45 +29,46 @@ func searchByFingerprintBlock(
 	approxSearchStrategy approximate_search_strategy,
 	idx index) []candidate_fingerprint_block {
 
+	candidates := make([]candidate_fingerprint_block, 0)
+
 	// find exact matches for sub-fingerprints in the fingerint block
-	// note that only one needs to match in order to consider it as a candidate
-	// BER threshold filtering will happen after generating all candidates (could be optimized later)
+	// BER threshold filtering will happen after generating all candidates (could
+	// be optimized later)
 	for queryOffset, querySfp := range queryFpb {
-		candidates := searchBySubFingerprint(
+		newCandidates := searchBySubFingerprint(
 			querySfp,
 			queryOffset,
 			idx,
-			len(queryFpb),
 		)
 
-		if len(candidates) > 0 {
-			return candidates
+		if len(newCandidates) > 0 {
+			candidates = append(candidates, newCandidates...)
 		}
 	}
 
-	// none of the exact sub-fingerprints were found
 	// try approximate searching, if a strategy was provided
+	// this will do a depth-first search but since we collect all candidates,
+	// this should not matter
 	if approxSearchStrategy != nil {
 		for queryOffset, querySfp := range queryFpb {
 			approxQuerySfps := approxSearchStrategy(querySfp)
 
 			for _, approxQuerySfp := range approxQuerySfps {
-				candidates := searchBySubFingerprint(
+				newCandidates := searchBySubFingerprint(
 					approxQuerySfp,
 					queryOffset,
 					idx,
-					len(queryFpb),
 				)
 
-				if len(candidates) > 0 {
-					return candidates
+				if len(newCandidates) > 0 {
+					candidates = append(candidates, newCandidates...)
 				}
 			}
 		}
 	}
 
-	// ok, seriously, still nothing was found, even after approximate search
-	return make([]candidate_fingerprint_block, 0)
+	// deduplicate any candidates and return
+	return deduplicateCandidateFingerprintBlocks(candidates)
 }
 
 // Given a sub-fingerprint and the offset of that sub-fingerprint in the query
@@ -74,25 +79,19 @@ func searchByFingerprintBlock(
 func searchBySubFingerprint(
 	querySfp sub_fingerprint,
 	queryOffset int,
-	idx index,
-	fingerprintBlockSize int) []candidate_fingerprint_block {
+	idx index) []candidate_fingerprint_block {
 
 	postings, found := idx[querySfp]
 	if !found {
 		return make([]candidate_fingerprint_block, 0)
 	}
 
-	candidates := make([]candidate_fingerprint_block, 0)
-	for _, posting := range postings {
+	candidates := make([]candidate_fingerprint_block, len(postings))
+	for i, posting := range postings {
 		start := posting.offset - queryOffset
-		fpb, err := posting.fp.extractFingerprintBlock(start, fingerprintBlockSize)
-		if err != nil {
-			candidate := candidate_fingerprint_block{
-				posting.fp,
-				start,
-				fpb,
-			}
-			candidates = append(candidates, candidate)
+		candidates[i] = candidate_fingerprint_block{
+			posting.fp,
+			start,
 		}
 	}
 

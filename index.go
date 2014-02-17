@@ -14,7 +14,7 @@ func buildIndex(corpus []fingerprint) index {
 
 	for i, fp := range corpus {
 		for offset, sfp := range fp.sfps {
-			posting := posting{&corpus[i], offset} // must dreference the array entry
+			posting := posting{&corpus[i], offset}
 
 			// add posting to postings list for given sub-fingerprint
 			postingsList, exists := idx[sfp]
