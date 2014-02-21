@@ -1,13 +1,24 @@
 package main
 
-type candidate_fingerprint_block struct {
+type candidate struct {
 	fp     *fingerprint
 	offset int
 }
 
-// TODO
-func deduplicateCandidateFingerprintBlocks(candidates []candidate_fingerprint_block) []candidate_fingerprint_block {
-	return candidates
+func deduplicateCandidates(candidates []candidate) []candidate {
+	m := make(map[candidate]bool)
+	for _, c := range candidates {
+		m[c] = true
+	}
+
+	deduped := make([]candidate, len(m))
+	for k, v := range m {
+		if v {
+			deduped = append(deduped, k)
+		}
+	}
+
+	return deduped
 }
 
 type approximate_search_strategy func(sfp sub_fingerprint) []sub_fingerprint
@@ -27,9 +38,9 @@ func noopApproximateSearchStrategy() approximate_search_strategy {
 func searchByFingerprintBlock(
 	queryFpb fingerprint_block,
 	approxSearchStrategy approximate_search_strategy,
-	idx index) []candidate_fingerprint_block {
+	idx index) []candidate {
 
-	candidates := make([]candidate_fingerprint_block, 0)
+	candidates := make([]candidate, 0)
 
 	// find exact matches for sub-fingerprints in the fingerint block
 	// BER threshold filtering will happen after generating all candidates (could
@@ -67,8 +78,7 @@ func searchByFingerprintBlock(
 		}
 	}
 
-	// deduplicate any candidates and return
-	return deduplicateCandidateFingerprintBlocks(candidates)
+	return deduplicateCandidates(candidates)
 }
 
 // Given a sub-fingerprint and the offset of that sub-fingerprint in the query
@@ -79,17 +89,17 @@ func searchByFingerprintBlock(
 func searchBySubFingerprint(
 	querySfp sub_fingerprint,
 	queryOffset int,
-	idx index) []candidate_fingerprint_block {
+	idx index) []candidate {
 
 	postings, found := idx[querySfp]
 	if !found {
-		return make([]candidate_fingerprint_block, 0)
+		return make([]candidate, 0)
 	}
 
-	candidates := make([]candidate_fingerprint_block, len(postings))
+	candidates := make([]candidate, len(postings))
 	for i, posting := range postings {
 		start := posting.offset - queryOffset
-		candidates[i] = candidate_fingerprint_block{
+		candidates[i] = candidate{
 			posting.fp,
 			start,
 		}
