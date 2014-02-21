@@ -6,15 +6,17 @@ type candidate struct {
 }
 
 func deduplicateCandidates(candidates []candidate) []candidate {
-	m := make(map[candidate]bool)
+	m := make(map[candidate]bool, 0)
 	for _, c := range candidates {
 		m[c] = true
 	}
 
 	deduped := make([]candidate, len(m))
+	i := 0
 	for k, v := range m {
 		if v {
-			deduped = append(deduped, k)
+			deduped[i] = k
+			i++
 		}
 	}
 
