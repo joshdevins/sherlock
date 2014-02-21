@@ -28,6 +28,29 @@ func TestByteHammingDistance(t *testing.T) {
 	}
 }
 
+func TestByteFlipBit(t *testing.T) {
+	fixtures := []struct {
+		b        byte
+		i        uint
+		expected byte
+	}{
+		{0, 7, 1}, // index 7; 00000000 (0) -> 00000001 (1)
+		{0, 6, 2}, // index 6; 00000000 (0) -> 00000010 (2)
+		{0, 5, 4}, // index 6; 00000000 (0) -> 00000100 (4)
+		{4, 5, 0}, // index 5; 00000100 (4) -> 00000000 (0)
+	}
+
+	for i, fixture := range fixtures {
+		got, err := flipBit(fixture.b, fixture.i)
+		if err != nil {
+			t.Errorf("[%d] Unexpected error: %s", err)
+		}
+		if fixture.expected != got {
+			t.Errorf("[%d] Expected %d but got %d", i, fixture.expected, got)
+		}
+	}
+}
+
 func TestSubFingerprintHammingDistance(t *testing.T) {
 	fixtures := []struct {
 		left     sub_fingerprint
@@ -44,6 +67,28 @@ func TestSubFingerprintHammingDistance(t *testing.T) {
 
 	for i, fixture := range fixtures {
 		got := fixture.left.hammingDistanceTo(fixture.right)
+		if fixture.expected != got {
+			t.Errorf("[%d] Expected %d but got %d", i, fixture.expected, got)
+		}
+	}
+}
+
+func TestSubFingerprintBitFlip(t *testing.T) {
+	fixtures := []struct {
+		sfp      sub_fingerprint
+		i        uint
+		expected sub_fingerprint
+	}{
+		{sub_fingerprint{0, 0, 0, 0}, 0*8 + 7, sub_fingerprint{1, 0, 0, 0}}, // index 07; byte 0, index 7; 00000000 (0) -> 00000001 (1)
+		{sub_fingerprint{0, 0, 0, 0}, 1*8 + 7, sub_fingerprint{0, 1, 0, 0}}, // index 15; byte 1, index 7; 00000000 (0) -> 00000001 (1)
+		{sub_fingerprint{0, 0, 0, 0}, 2*8 + 5, sub_fingerprint{0, 0, 4, 0}}, // index 22; byte 2, index 5; 00000000 (0) -> 00000100 (4)
+	}
+
+	for i, fixture := range fixtures {
+		got, err := fixture.sfp.flipBit(fixture.i)
+		if err != nil {
+			t.Errorf("[%d] Unexpected error: %s", err)
+		}
 		if fixture.expected != got {
 			t.Errorf("[%d] Expected %d but got %d", i, fixture.expected, got)
 		}

@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	SubFingerprintSizeBytes = 4                           // 32-bits
-	SubFingerprintSizeBits  = SubFingerprintSizeBytes * 8 // 32-bits
-	FingerprintBlockSize    = 256                         // except during testing, so this is a hint
+	BitsPerByte             = 8
+	SubFingerprintSizeBytes = 4                                     // 32-bits
+	SubFingerprintSizeBits  = SubFingerprintSizeBytes * BitsPerByte // 32-bits
+	FingerprintBlockSize    = 256                                   // except during testing, so this is a hint
 )
 
 type sub_fingerprint [SubFingerprintSizeBytes]byte
@@ -21,6 +22,7 @@ type fingerprint struct {
 	sfps []sub_fingerprint
 }
 
+// Determines the bit-wise Hamming distance between two bytes.
 func hammingDistance(left byte, right byte) int {
 	if left == right {
 		return 0
@@ -41,6 +43,20 @@ func hammingDistance(left byte, right byte) int {
 	return diff
 }
 
+// Flips a single bit within a byte.
+func flipBit(b byte, i uint) (byte, error) {
+	if i >= BitsPerByte {
+		err := fmt.Errorf("Can not flip a bit in a position that does not exist: %d")
+		return b, err // return unmodified byte
+	}
+
+	b ^= (1 << uint(BitsPerByte-1-i))
+
+	return b, nil
+}
+
+// Determines the bit-wise Hamming distance from the sub-fingerprint to any
+// other sub-fingerprint.
 func (left *sub_fingerprint) hammingDistanceTo(right sub_fingerprint) int {
 	distance := 0
 
@@ -54,6 +70,35 @@ func (left *sub_fingerprint) hammingDistanceTo(right sub_fingerprint) int {
 	return distance
 }
 
+// Creates a copy of the sub-fingerprint and flips a single bit.
+func (sfp *sub_fingerprint) flipBit(i uint) (sub_fingerprint, error) {
+	if i >= SubFingerprintSizeBits {
+		err := fmt.Errorf("Can not flip a bit in a position that does not exist: %d")
+		return *sfp, err // return unmodified sub-fingerprint
+	}
+
+	// copy the underlying sub-fingerprint
+	flipped := sub_fingerprint{}
+	for i, v := range sfp {
+		flipped[i] = v
+	}
+
+	// find the new indices
+	byteIndex := i / 8
+	bitIndex := uint(i % 8)
+
+	// flip the bit in the byte
+	flippedByte, err := flipBit(flipped[byteIndex], bitIndex)
+	if err != nil {
+		return *sfp, err // return unmodified sub-fingerprint
+	}
+
+	flipped[byteIndex] = flippedByte
+	return flipped, nil
+}
+
+// Calculates the bit error rate from the fingerprint block to any other
+// fingerprint block.
 func (left *fingerprint_block) bitErrorRateWith(right fingerprint_block) (float32, error) {
 	if len(*left) != len(right) {
 		err := fmt.Errorf(
