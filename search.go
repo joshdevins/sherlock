@@ -23,11 +23,27 @@ func deduplicateCandidates(candidates []candidate) []candidate {
 	return deduped
 }
 
-type approximate_search_strategy func(sfp sub_fingerprint) []sub_fingerprint
+type approximate_search_strategy func(sfp sub_fingerprint) ([]sub_fingerprint, error)
 
 func noopApproximateSearchStrategy() approximate_search_strategy {
-	return func(sfp sub_fingerprint) []sub_fingerprint {
-		return make([]sub_fingerprint, 0)
+	return func(sfp sub_fingerprint) ([]sub_fingerprint, error) {
+		return make([]sub_fingerprint, 0), nil
+	}
+}
+
+func flippingApproximateSearchStrategy(n int) approximate_search_strategy {
+	return func(sfp sub_fingerprint) ([]sub_fingerprint, error) {
+		flipped := make([]sub_fingerprint, SubFingerprintSizeBits)
+
+		for i := 0; i < SubFingerprintSizeBits; i++ {
+			flippedSfp, err := sfp.flipBit(uint(i))
+			if err != nil {
+				return make([]sub_fingerprint, 0), err
+			}
+			flipped[i] = flippedSfp
+		}
+
+		return flipped, nil
 	}
 }
 
@@ -40,7 +56,7 @@ func noopApproximateSearchStrategy() approximate_search_strategy {
 func searchByFingerprintBlock(
 	queryFpb fingerprint_block,
 	approxSearchStrategy approximate_search_strategy,
-	idx index) []candidate {
+	idx index) ([]candidate, error) {
 
 	candidates := make([]candidate, 0)
 
@@ -64,7 +80,10 @@ func searchByFingerprintBlock(
 	// this should not matter
 	if approxSearchStrategy != nil {
 		for queryOffset, querySfp := range queryFpb {
-			approxQuerySfps := approxSearchStrategy(querySfp)
+			approxQuerySfps, err := approxSearchStrategy(querySfp)
+			if err != nil {
+				return make([]candidate, 0), err
+			}
 
 			for _, approxQuerySfp := range approxQuerySfps {
 				newCandidates := searchBySubFingerprint(
@@ -80,7 +99,7 @@ func searchByFingerprintBlock(
 		}
 	}
 
-	return deduplicateCandidates(candidates)
+	return deduplicateCandidates(candidates), nil
 }
 
 // Given a sub-fingerprint and the offset of that sub-fingerprint in the query
