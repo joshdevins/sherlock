@@ -167,8 +167,8 @@ func TestExtractFingerprintBlock(t *testing.T) {
 	}
 
 	fixtures := []struct {
-		start    int
-		size     int
+		start    uint
+		size     uint
 		expected fingerprint_block
 	}{
 		{

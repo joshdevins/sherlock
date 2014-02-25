@@ -168,19 +168,21 @@ func (left *fingerprint_block) bitErrorRateWith(right fingerprint_block) (float3
 // Extract a fingerprint block from the fingerprint given the starting
 // position and the final size of the fingerprint block. If the block would
 // overflow off the end of the fingerprint, an error is returned instead.
-func (fp *fingerprint) extractFingerprintBlock(start int, size int) (fingerprint_block, error) {
-	if start < 0 || start >= len(fp.sfps) {
+func (fp *fingerprint) extractFingerprintBlock(start uint, size uint) (fingerprint_block, error) {
+	if start >= uint(len(fp.sfps)) {
 		err := fmt.Errorf(
 			"Start %d is not within the bounds of the fingerprint of size %d",
-			start, len(fp.sfps),
+			start,
+			len(fp.sfps),
 		)
 		return nil, err
 	}
 
-	if size < 0 || size > len(fp.sfps) {
+	if size > uint(len(fp.sfps)) {
 		err := fmt.Errorf(
 			"Size %d is not within the bounds of the fingerprint of size %d",
-			size, len(fp.sfps),
+			size,
+			len(fp.sfps),
 		)
 		return nil, err
 	}
@@ -188,7 +190,7 @@ func (fp *fingerprint) extractFingerprintBlock(start int, size int) (fingerprint
 	end := start + size - 1 // end index is inclusive
 
 	// check for overflow -- block ends past the end of the fingerprint
-	if end >= len(fp.sfps) {
+	if end >= uint(len(fp.sfps)) {
 		err := fmt.Errorf(
 			"End position %d (start position %d plus size %d) would overflow off the end of the fingerprint of size %d",
 			end, start, size, len(fp.sfps),
