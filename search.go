@@ -31,19 +31,9 @@ func noopApproximateSearchStrategy() approximate_search_strategy {
 	}
 }
 
-func flipAllApproximateSearchStrategy() approximate_search_strategy {
+func flipAllApproximateSearchStrategy(n uint) approximate_search_strategy {
 	return func(sfp sub_fingerprint) ([]sub_fingerprint, error) {
-		flipped := make([]sub_fingerprint, SubFingerprintSizeBits)
-
-		for i := 0; i < SubFingerprintSizeBits; i++ {
-			flippedSfp, err := sfp.flipBit(uint(i))
-			if err != nil {
-				return make([]sub_fingerprint, 0), err
-			}
-			flipped[i] = flippedSfp
-		}
-
-		return flipped, nil
+		return sfp.flipAllBitsUntil(n)
 	}
 }
 
