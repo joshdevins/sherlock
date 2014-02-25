@@ -42,10 +42,8 @@ func searchByFingerprintBlock(
 			idx,
 		)
 
-		if len(newCandidates) > 0 {
-			for _, c := range newCandidates {
-				candidates[c] = true
-			}
+		for _, c := range newCandidates {
+			candidates[c] = true
 		}
 	}
 
@@ -64,10 +62,8 @@ func searchByFingerprintBlock(
 					idx,
 				)
 
-				if len(newCandidates) > 0 {
-					for _, c := range newCandidates {
-						candidates[c] = true
-					}
+				for _, c := range newCandidates {
+					candidates[c] = true
 				}
 			}
 		}
