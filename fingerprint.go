@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
 )
 
@@ -44,15 +45,14 @@ func hammingDistance(left byte, right byte) int {
 }
 
 // Flips a single bit within a byte.
-func flipBit(b byte, i uint) (byte, error) {
+func flipBit(b byte, i uint) byte {
 	if i >= BitsPerByte {
-		err := fmt.Errorf("Can not flip a bit in a position that does not exist: %d")
-		return b, err // return unmodified byte
+		log.Fatalf("Can not flip a bit in a position that does not exist: %d")
 	}
 
 	b ^= (1 << uint(BitsPerByte-1-i))
 
-	return b, nil
+	return b
 }
 
 // Determines the bit-wise Hamming distance from the sub-fingerprint to any
@@ -71,10 +71,9 @@ func (left *sub_fingerprint) hammingDistanceTo(right sub_fingerprint) int {
 }
 
 // Creates a copy of the sub-fingerprint and flips a single bit.
-func (sfp *sub_fingerprint) flipBit(i uint) (sub_fingerprint, error) {
+func (sfp *sub_fingerprint) flipBit(i uint) sub_fingerprint {
 	if i >= SubFingerprintSizeBits {
-		err := fmt.Errorf("Can not flip a bit in a position that does not exist: %d")
-		return *sfp, err // return unmodified sub-fingerprint
+		log.Fatalf("Can not flip a bit in a position that does not exist: %d")
 	}
 
 	// copy the underlying sub-fingerprint
@@ -88,12 +87,59 @@ func (sfp *sub_fingerprint) flipBit(i uint) (sub_fingerprint, error) {
 	bitIndex := uint(i % 8)
 
 	// flip the bit in the byte
-	flippedByte, err := flipBit(flipped[byteIndex], bitIndex)
-	if err != nil {
-		return *sfp, err // return unmodified sub-fingerprint
+	flipped[byteIndex] = flipBit(flipped[byteIndex], bitIndex)
+
+	return flipped
+}
+
+// For every bit of the sub-fingerprint, create a copy of the original and flip
+// a single bit. This produces a slice of sub-fingerprints that are all Hamming
+// distance of one (1) from the original sub-fingerprint.
+func (sfp *sub_fingerprint) flipAllBits() []sub_fingerprint {
+	flipped := make([]sub_fingerprint, SubFingerprintSizeBits)
+
+	for i := 0; i < SubFingerprintSizeBits; i++ {
+		flipped[i] = sfp.flipBit(uint(i))
 	}
 
-	flipped[byteIndex] = flippedByte
+	return flipped
+}
+
+// Flips the bits of a sub-fingerprint to generate all permutations that are
+// equal to or less than a Hamming distance of `n`. Note that this is sequential
+// and the algorithm is O(bits^n) so this can be slow for larger values of `n`.
+// This algorithm could be optimised when necessary.
+func (sfp *sub_fingerprint) flipAllBitsUntil(n uint) ([]sub_fingerprint, error) {
+	if n < 1 {
+		err := fmt.Errorf("Target Hamming distance must be greater than or equal to 1: %d", n)
+		return make([]sub_fingerprint, 0), err
+	}
+
+	set := make(
+		map[sub_fingerprint]bool,
+		int(math.Pow(
+			float64(SubFingerprintSizeBits),
+			float64(n),
+		)),
+	)
+	set[*sfp] = true
+
+	for i := uint(1); i <= n; i++ {
+		for os, _ := range set {
+			for _, fs := range os.flipAllBits() {
+				set[fs] = true
+			}
+		}
+	}
+
+	// set into slice
+	flipped := make([]sub_fingerprint, len(set))
+	i := 0
+	for k, _ := range set {
+		flipped[i] = k
+		i++
+	}
+
 	return flipped, nil
 }
 
