@@ -5,24 +5,6 @@ type candidate struct {
 	offset int
 }
 
-func deduplicateCandidates(candidates []candidate) []candidate {
-	m := make(map[candidate]bool, 0)
-	for _, c := range candidates {
-		m[c] = true
-	}
-
-	deduped := make([]candidate, len(m))
-	i := 0
-	for k, v := range m {
-		if v {
-			deduped[i] = k
-			i++
-		}
-	}
-
-	return deduped
-}
-
 type approximate_search_strategy func(sfp sub_fingerprint) ([]sub_fingerprint, error)
 
 func noopApproximateSearchStrategy() approximate_search_strategy {
@@ -48,11 +30,11 @@ func searchByFingerprintBlock(
 	approxSearchStrategy approximate_search_strategy,
 	idx index) ([]candidate, error) {
 
-	candidates := make([]candidate, 0)
+	candidates := make(map[candidate]bool)
 
 	// find exact matches for sub-fingerprints in the fingerint block
 	// BER threshold filtering will happen after generating all candidates (could
-	// be optimized later)
+	// be optimised later)
 	for queryOffset, querySfp := range queryFpb {
 		newCandidates := searchBySubFingerprint(
 			querySfp,
@@ -61,13 +43,13 @@ func searchByFingerprintBlock(
 		)
 
 		if len(newCandidates) > 0 {
-			candidates = append(candidates, newCandidates...)
+			for _, c := range newCandidates {
+				candidates[c] = true
+			}
 		}
 	}
 
 	// try approximate searching, if a strategy was provided
-	// this will do a depth-first search but since we collect all candidates,
-	// this should not matter
 	if approxSearchStrategy != nil {
 		for queryOffset, querySfp := range queryFpb {
 			approxQuerySfps, err := approxSearchStrategy(querySfp)
@@ -83,13 +65,23 @@ func searchByFingerprintBlock(
 				)
 
 				if len(newCandidates) > 0 {
-					candidates = append(candidates, newCandidates...)
+					for _, c := range newCandidates {
+						candidates[c] = true
+					}
 				}
 			}
 		}
 	}
 
-	return deduplicateCandidates(candidates), nil
+	// set to slice
+	cslice := make([]candidate, len(candidates))
+	i := 0
+	for k, _ := range candidates {
+		cslice[i] = k
+		i++
+	}
+
+	return cslice, nil
 }
 
 // Given a sub-fingerprint and the offset of that sub-fingerprint in the query

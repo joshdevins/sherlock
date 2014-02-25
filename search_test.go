@@ -1,7 +1,5 @@
 package main
 
-import "testing"
-
 func buildTestCorpus() []fingerprint {
 	return []fingerprint{
 		fingerprint{
@@ -31,26 +29,5 @@ func buildTestCorpus() []fingerprint {
 				sub_fingerprint{1, 8, 0, 1},
 			},
 		},
-	}
-}
-
-func TestDeduplicateCandidates(t *testing.T) {
-	corpus := buildTestCorpus()
-
-	// three duplicates in candidates (0001, 1)
-	candidates := []candidate{
-		candidate{&corpus[0], 1},
-		candidate{&corpus[0], 1},
-		candidate{&corpus[1], 2},
-		candidate{&corpus[0], 1},
-		candidate{&corpus[2], 1},
-		candidate{&corpus[2], 2},
-		candidate{&corpus[2], 3},
-	}
-
-	deduped := deduplicateCandidates(candidates)
-
-	if expected, got := len(candidates)-2, len(deduped); expected != got {
-		t.Errorf("Expected %d but got %d", expected, got)
 	}
 }
