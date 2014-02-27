@@ -1,0 +1,15 @@
+
+message IndexFingerprint {
+  required string id = 1;    // some unique identifier of the fingerprint
+  required uint32 size = 2;  // number of 32-bit sub-fingerprints in the stream
+  required bytes stream = 3; // stream of 32-bit sub-fingerprints, packed one after the other with no delimiters
+}
+
+message QueryFingerprint {
+  repeated QuerySubFingerprint subFingerprints = 1;
+
+  message QuerySubFingerprint {
+    required bytes value = 1; // stream of 4-bytes making up the 32-bit sub-fingerprint
+    repeated uint8 mostSignificantBits = 2 [packed=true];
+  }
+}
