@@ -7,10 +7,10 @@ import "fmt"
 // size of the blocks being used.
 type candidate struct {
 	fp     *fingerprint
-	offset uint
+	offset int
 }
 
-func (c *candidate) extractFingerprintBlock(size uint) (fingerprint_block, error) {
+func (c *candidate) extractFingerprintBlock(size int) (fingerprint_block, error) {
 	return c.fp.extractFingerprintBlock(c.offset, size)
 }
 
@@ -39,7 +39,7 @@ func filterCandidatesByBER(
 	var filtered []candidate
 	for _, candidate := range candidates {
 		// FIXME: errors swallowed
-		candidateFpb, _ := candidate.extractFingerprintBlock(uint(len(queryFpb)))
+		candidateFpb, _ := candidate.extractFingerprintBlock(len(queryFpb))
 		actualBer, _ := queryFpb.bitErrorRateWith(candidateFpb)
 
 		if actualBer <= ber {
@@ -58,7 +58,7 @@ func noopApproximateSearchStrategy() approximate_search_strategy {
 	}
 }
 
-func flipAllApproximateSearchStrategy(n uint) approximate_search_strategy {
+func flipAllApproximateSearchStrategy(n int) approximate_search_strategy {
 	return func(sfp sub_fingerprint) ([]sub_fingerprint, error) {
 		return sfp.flipAllBitsUntil(n)
 	}
@@ -83,7 +83,7 @@ func searchBySubFingerprint(
 	for i, posting := range postings {
 		candidates[i] = candidate{
 			posting.fp,
-			uint(posting.offset - queryOffset),
+			posting.offset - queryOffset,
 		}
 	}
 
@@ -146,8 +146,8 @@ func searchByFingerprintBlock(
 // being searched no more than once from the query fingerprint.
 func searchByFingerprint(
 	queryFp fingerprint,
-	blockSize uint,
-	stepSize uint,
+	blockSize int,
+	stepSize int,
 	approxSearchStrategy approximate_search_strategy,
 	ber float32,
 	idx index) ([]candidate, error) {
@@ -162,7 +162,7 @@ func searchByFingerprint(
 		return make([]candidate, 0), err
 	}
 
-	if l := uint(len(queryFp.sfps)); l < blockSize {
+	if l := len(queryFp.sfps); l < blockSize {
 		err := fmt.Errorf("Query fingerprint must be greater than or equal to a block (%d): %d", blockSize, l)
 		return make([]candidate, 0), err
 	}
@@ -170,7 +170,7 @@ func searchByFingerprint(
 	candidates := make(map[candidate]bool)
 
 	// step through the fingerprint, taking steps as specified
-	for offset := uint(0); offset+blockSize < uint(len(queryFp.sfps)); offset += stepSize {
+	for offset := 0; offset+blockSize < len(queryFp.sfps); offset += stepSize {
 		queryFpb, err := queryFp.extractFingerprintBlock(offset, blockSize)
 		if err != nil {
 			return make([]candidate, 0), err

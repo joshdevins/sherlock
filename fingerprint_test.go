@@ -31,7 +31,7 @@ func TestByteHammingDistance(t *testing.T) {
 func TestByteFlipBit(t *testing.T) {
 	fixtures := []struct {
 		b        byte
-		i        uint
+		i        int
 		expected byte
 	}{
 		{0, 7, 1}, // index 7; 00000000 (0) -> 00000001 (1)
@@ -73,7 +73,7 @@ func TestSubFingerprintHammingDistance(t *testing.T) {
 func TestSubFingerprintFlipBit(t *testing.T) {
 	fixtures := []struct {
 		sfp      sub_fingerprint
-		i        uint
+		i        int
 		expected sub_fingerprint
 	}{
 		{sub_fingerprint{0, 0, 0, 0}, 0*8 + 7, sub_fingerprint{1, 0, 0, 0}}, // index 07; byte 0, index 7; 00000000 (0) -> 00000001 (1)
@@ -167,8 +167,8 @@ func TestExtractFingerprintBlock(t *testing.T) {
 	}
 
 	fixtures := []struct {
-		start    uint
-		size     uint
+		start    int
+		size     int
 		expected fingerprint_block
 	}{
 		{

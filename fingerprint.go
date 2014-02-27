@@ -45,8 +45,8 @@ func hammingDistance(left byte, right byte) int {
 }
 
 // Flips a single bit within a byte.
-func flipBit(b byte, i uint) byte {
-	if i >= BitsPerByte {
+func flipBit(b byte, i int) byte {
+	if i < 0 || i >= BitsPerByte {
 		log.Fatalf("Can not flip a bit in a position that does not exist: %d")
 	}
 
@@ -71,8 +71,8 @@ func (left *sub_fingerprint) hammingDistanceTo(right sub_fingerprint) int {
 }
 
 // Creates a copy of the sub-fingerprint and flips a single bit.
-func (sfp *sub_fingerprint) flipBit(i uint) sub_fingerprint {
-	if i >= SubFingerprintSizeBits {
+func (sfp *sub_fingerprint) flipBit(i int) sub_fingerprint {
+	if i < 0 || i >= SubFingerprintSizeBits {
 		log.Fatalf("Can not flip a bit in a position that does not exist: %d")
 	}
 
@@ -84,7 +84,7 @@ func (sfp *sub_fingerprint) flipBit(i uint) sub_fingerprint {
 
 	// find the new indices
 	byteIndex := i / 8
-	bitIndex := uint(i % 8)
+	bitIndex := i % 8
 
 	// flip the bit in the byte
 	flipped[byteIndex] = flipBit(flipped[byteIndex], bitIndex)
@@ -99,7 +99,7 @@ func (sfp *sub_fingerprint) flipAllBits() []sub_fingerprint {
 	flipped := make([]sub_fingerprint, SubFingerprintSizeBits)
 
 	for i := 0; i < SubFingerprintSizeBits; i++ {
-		flipped[i] = sfp.flipBit(uint(i))
+		flipped[i] = sfp.flipBit(i)
 	}
 
 	return flipped
@@ -109,7 +109,7 @@ func (sfp *sub_fingerprint) flipAllBits() []sub_fingerprint {
 // equal to or less than a Hamming distance of `n`. Note that this is sequential
 // and the algorithm is O(bits^n) so this can be slow for larger values of `n`.
 // This algorithm could be optimised when necessary.
-func (sfp *sub_fingerprint) flipAllBitsUntil(n uint) ([]sub_fingerprint, error) {
+func (sfp *sub_fingerprint) flipAllBitsUntil(n int) ([]sub_fingerprint, error) {
 	if n < 1 {
 		err := fmt.Errorf("Target Hamming distance must be greater than or equal to 1: %d", n)
 		return make([]sub_fingerprint, 0), err
@@ -124,7 +124,7 @@ func (sfp *sub_fingerprint) flipAllBitsUntil(n uint) ([]sub_fingerprint, error) 
 	)
 	set[*sfp] = true
 
-	for i := uint(1); i <= n; i++ {
+	for i := 1; i <= n; i++ {
 		for os, _ := range set {
 			for _, fs := range os.flipAllBits() {
 				set[fs] = true
@@ -168,8 +168,8 @@ func (left *fingerprint_block) bitErrorRateWith(right fingerprint_block) (float3
 // Extract a fingerprint block from the fingerprint given the starting
 // position and the final size of the fingerprint block. If the block would
 // overflow off the end of the fingerprint, an error is returned instead.
-func (fp *fingerprint) extractFingerprintBlock(start uint, size uint) (fingerprint_block, error) {
-	if start >= uint(len(fp.sfps)) {
+func (fp *fingerprint) extractFingerprintBlock(start int, size int) (fingerprint_block, error) {
+	if start < 0 || start >= int(len(fp.sfps)) {
 		err := fmt.Errorf(
 			"Start %d is not within the bounds of the fingerprint of size %d",
 			start,
@@ -178,7 +178,7 @@ func (fp *fingerprint) extractFingerprintBlock(start uint, size uint) (fingerpri
 		return nil, err
 	}
 
-	if size > uint(len(fp.sfps)) {
+	if size < 1 || size > len(fp.sfps) {
 		err := fmt.Errorf(
 			"Size %d is not within the bounds of the fingerprint of size %d",
 			size,
@@ -190,7 +190,7 @@ func (fp *fingerprint) extractFingerprintBlock(start uint, size uint) (fingerpri
 	end := start + size - 1 // end index is inclusive
 
 	// check for overflow -- block ends past the end of the fingerprint
-	if end >= uint(len(fp.sfps)) {
+	if end >= len(fp.sfps) {
 		err := fmt.Errorf(
 			"End position %d (start position %d plus size %d) would overflow off the end of the fingerprint of size %d",
 			end, start, size, len(fp.sfps),
