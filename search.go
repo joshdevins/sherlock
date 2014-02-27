@@ -169,7 +169,7 @@ func searchByFingerprint(
 
 	candidates := make(map[candidate]bool)
 
-	// step through the fingerprint, taking steps as specified
+	// walk through the fingerprint, taking steps as specified
 	for offset := 0; offset+blockSize < len(queryFp.sfps); offset += stepSize {
 		queryFpb, err := queryFp.extractFingerprintBlock(offset, blockSize)
 		if err != nil {

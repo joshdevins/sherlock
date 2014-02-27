@@ -10,6 +10,23 @@ Fingerprint indexing, searching, matching. You know, general sleuthing.
   Philips hashing paper [1]
 * ideally, provide an evaluation harness allowing easy tuning of parameters
 
+## HTTP API
+
+* POST `/index` fingerprint body
+* POST `/search` fingerprint body
+  * `approx_search_strategy=[none|flip]` the approximate search strategy to
+    use when generating candidates
+  * `max_hamming_distance=[int]` the maximum Hamming distance to consider for a
+    candidate sub-fingerprint when performing a bit flipping approximate search
+    strategy
+  * `ber=[float]` the upper bound threshold of the bit error rate for use when
+    comparing fingerprint blocks between query and candidate
+* GET `/-/stats` shows statistics about the index
+
+The HTTP POST body used in the HTTP API should be a protocol buffer encoded
+fingerprint, octet binary encoded for HTTP. The schema is defined in
+`fingerprint.proto`.
+
 ## Bibliography
 
 [1] J. Haitsma and A. Kalker, “A Highly Robust Audio Fingerprinting System,” in
